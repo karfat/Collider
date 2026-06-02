@@ -83,8 +83,9 @@ canvas{display:block;width:100%;border-radius:12px;border:1px solid #21262d;marg
 .stat-lbl{font-size:11px;color:#8b949e;margin-bottom:2px}
 .stat-val{font-size:14px;font-weight:500}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.chip{padding:5px 12px;border-radius:20px;font-size:13px;font-weight:500;display:inline-flex;align-items:baseline;gap:5px}
-.chip-name{font-size:11px;font-weight:400;opacity:.7}
+.chip{padding:5px 12px;border-radius:20px;font-size:13px;font-weight:500}
+.chip-name::before{content:' · '}
+.chip-name{font-size:11px;font-weight:400;opacity:.75}
 .res-desc{font-size:14px;color:#8b949e;line-height:1.6;margin-top:8px}
 /* Product element card */
 .prod-el-card{margin-top:12px;border:1px solid #21262d;border-radius:10px;padding:12px 14px;background:#0d1117}
@@ -351,6 +352,15 @@ ELEM_DATA.forEach(d=>ELEMS[d[0]]={z:d[0],sym:d[1],name:d[2],mass:d[3],cat:d[4],p
 // Build element lookup by symbol
 const ELEM_BY_SYM={};
 ELEM_DATA.forEach(d=>ELEM_BY_SYM[d[1]]=d[2]);
+
+// Extract element name from a product string like 'Fe(фрагмент)', 'Cs (основной)', 'Cs*'
+function getElemName(str){
+  // Strip everything from first non-letter/non-digit ASCII char
+  // Element symbols are 1-2 Latin letters, capitalised
+  const m=str.match(/^([A-Z][a-z]?)/);
+  if(!m) return null;
+  return ELEM_BY_SYM[m[1]]||null;
+}
 
 // ── STATE ────────────────────────────────────────────────────────────────
 let sel=[null,null]; // each: {type:'part'|'elem', data:...}
@@ -661,9 +671,7 @@ document.getElementById('goBtn').addEventListener('click',()=>{
   const cols=['#378ADD','#D4537E','#7F77DD','#D85A30','#1D9E75','#BA7517','#639922','#185FA5','#993556','#3C3489'];
   document.getElementById('resChips').innerHTML=rxn.products.map((p,i)=>{
     const col=cols[i%cols.length];
-    // Try to find element name: strip suffixes like "(фрагмент)", "(основной)", etc.
-    const baseSym=p.replace(/\s*[\(\*].*/,'').trim();
-    const elemName=ELEM_BY_SYM[baseSym];
+    const elemName=getElemName(p);
     const nameTag=elemName?`<span class="chip-name">${elemName}</span>`:'';
     return `<span class="chip" style="background:${col}22;color:${col};border:1px solid ${col}55">${p}${nameTag}</span>`;
   }).join('');
