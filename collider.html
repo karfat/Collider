@@ -83,7 +83,8 @@ canvas{display:block;width:100%;border-radius:12px;border:1px solid #21262d;marg
 .stat-lbl{font-size:11px;color:#8b949e;margin-bottom:2px}
 .stat-val{font-size:14px;font-weight:500}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.chip{padding:4px 10px;border-radius:20px;font-size:13px;font-weight:500}
+.chip{padding:5px 12px;border-radius:20px;font-size:13px;font-weight:500;display:inline-flex;align-items:baseline;gap:5px}
+.chip-name{font-size:11px;font-weight:400;opacity:.7}
 .res-desc{font-size:14px;color:#8b949e;line-height:1.6;margin-top:8px}
 /* Product element card */
 .prod-el-card{margin-top:12px;border:1px solid #21262d;border-radius:10px;padding:12px 14px;background:#0d1117}
@@ -346,6 +347,10 @@ const CATEGORY_COLORS={
 // Build element lookup by Z
 const ELEMS={};
 ELEM_DATA.forEach(d=>ELEMS[d[0]]={z:d[0],sym:d[1],name:d[2],mass:d[3],cat:d[4],period:d[5],group:d[6]});
+
+// Build element lookup by symbol
+const ELEM_BY_SYM={};
+ELEM_DATA.forEach(d=>ELEM_BY_SYM[d[1]]=d[2]);
 
 // ── STATE ────────────────────────────────────────────────────────────────
 let sel=[null,null]; // each: {type:'part'|'elem', data:...}
@@ -654,7 +659,14 @@ document.getElementById('goBtn').addEventListener('click',()=>{
   document.getElementById('resTitle').textContent=rxn.title;
   document.getElementById('resGrid').innerHTML=rxn.stats.map(s=>`<div class="res-stat"><div class="stat-lbl">${s.lbl}</div><div class="stat-val">${s.val}</div></div>`).join('');
   const cols=['#378ADD','#D4537E','#7F77DD','#D85A30','#1D9E75','#BA7517','#639922','#185FA5','#993556','#3C3489'];
-  document.getElementById('resChips').innerHTML=rxn.products.map((p,i)=>`<span class="chip" style="background:${cols[i%cols.length]}22;color:${cols[i%cols.length]};border:1px solid ${cols[i%cols.length]}55">${p}</span>`).join('');
+  document.getElementById('resChips').innerHTML=rxn.products.map((p,i)=>{
+    const col=cols[i%cols.length];
+    // Try to find element name: strip suffixes like "(фрагмент)", "(основной)", etc.
+    const baseSym=p.replace(/\s*[\(\*].*/,'').trim();
+    const elemName=ELEM_BY_SYM[baseSym];
+    const nameTag=elemName?`<span class="chip-name">${elemName}</span>`:'';
+    return `<span class="chip" style="background:${col}22;color:${col};border:1px solid ${col}55">${p}${nameTag}</span>`;
+  }).join('');
   document.getElementById('resDesc').textContent=rxn.desc;
 
   // Element card
