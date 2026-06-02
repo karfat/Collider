@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Большой адронный коллайдер</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding:1.5rem}
+h1{font-size:20px;font-weight:500;margin-bottom:4px}
+.subtitle{font-size:13px;color:#8b949e;margin-bottom:1.2rem}
+.tabs{display:flex;gap:4px;margin-bottom:1.2rem;border-bottom:1px solid #21262d;padding-bottom:0}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#8b949e;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:#79c0ff;border-bottom-color:#378ADD}
+.tab:hover:not(.active){color:#e6edf3}
+.section-title{font-size:11px;color:#8b949e;margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+/* Particles tab */
+.particle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1.2rem}
+.p-card{border:1px solid #21262d;border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s;background:#161b22;user-select:none}
+.p-card:hover{border-color:#30363d;background:#1c2128}
+.p-card.sel1{border:2px solid #378ADD!important;background:#0d2137!important}
+.p-card.sel2{border:2px solid #D4537E!important;background:#21101a!important}
+.p-card .psym{font-size:20px;font-weight:500;margin-bottom:2px}
+.p-card .pname{font-size:11px;color:#8b949e}
+.p-card .pmass{font-size:10px;color:#484f58}
+/* Periodic table tab */
+#elemTab{display:none}
+.pt-wrap{overflow-x:auto;margin-bottom:1.2rem}
+.pt-grid{display:grid;grid-template-columns:repeat(18,1fr);gap:3px;min-width:800px}
+.el{border:1px solid #21262d;border-radius:5px;padding:4px 3px;cursor:pointer;transition:all .12s;background:#161b22;text-align:center;user-select:none;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.el:hover{border-color:#30363d;background:#1c2128}
+.el.sel1{border:2px solid #378ADD!important;background:#0d2137!important}
+.el.sel2{border:2px solid #D4537E!important;background:#21101a!important}
+.el.selboth{border:2px solid #9b59b6!important;background:#1a0d2e!important}
+.el .ez{font-size:9px;color:#484f58;line-height:1}
+.el .esym{font-size:14px;font-weight:700;line-height:1.3}
+.el .ename{font-size:8px;color:#8b949e;line-height:1.1;overflow:hidden;white-space:nowrap;max-width:100%}
+.el.alkali .esym{color:#ff7b72}
+.el.alkaline .esym{color:#ffa657}
+.el.transition .esym{color:#d2a8ff}
+.el.post .esym{color:#79c0ff}
+.el.metalloid .esym{color:#56d364}
+.el.nonmetal .esym{color:#e3b341}
+.el.halogen .esym{color:#f78166}
+.el.noble .esym{color:#58a6ff}
+.el.lanthanide .esym{color:#bc8cff}
+.el.actinide .esym{color:#f47067}
+.el.empty{border:none;background:transparent;cursor:default;pointer-events:none}
+/* Legend */
+.pt-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+/* Slots */
+.slots{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem}
+.slot{flex:1;border:1.5px dashed #30363d;border-radius:12px;padding:10px;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.slot.f1{border-color:#378ADD;background:#0d2137}
+.slot.f2{border-color:#D4537E;background:#21101a}
+.slot-lbl{font-size:11px;color:#8b949e;margin-bottom:3px}
+.slot-sym{font-size:22px;font-weight:600}
+.slot-nm{font-size:11px;color:#8b949e}
+.vs{font-size:18px;font-weight:500;color:#8b949e}
+/* Energy */
+.energy-row{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem}
+.energy-row label{font-size:13px;color:#8b949e;white-space:nowrap}
+.energy-row input[type=range]{flex:1;accent-color:#378ADD}
+.eval{font-size:13px;font-weight:500;min-width:55px;text-align:right;color:#79c0ff}
+/* Button */
+.go-btn{width:100%;padding:11px;border:1px solid #30363d;border-radius:8px;background:#161b22;font-size:15px;font-weight:500;cursor:pointer;color:#e6edf3;transition:all .15s;margin-bottom:1.2rem}
+.go-btn:hover:not(:disabled){background:#1c2128;border-color:#484f58}
+.go-btn:disabled{opacity:.4;cursor:not-allowed}
+.go-btn.ready{border-color:#378ADD;color:#79c0ff}
+/* Canvas */
+canvas{display:block;width:100%;border-radius:12px;border:1px solid #21262d;margin-bottom:1.2rem;background:#04090f}
+/* Result */
+.result{border:1px solid #21262d;border-radius:12px;padding:1rem 1.25rem;background:#161b22;display:none}
+.result.show{display:block}
+.res-title{font-size:16px;font-weight:500;margin-bottom:10px}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.res-stat{background:#0d1117;border-radius:8px;padding:8px 10px}
+.stat-lbl{font-size:11px;color:#8b949e;margin-bottom:2px}
+.stat-val{font-size:14px;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{padding:4px 10px;border-radius:20px;font-size:13px;font-weight:500}
+.res-desc{font-size:14px;color:#8b949e;line-height:1.6;margin-top:8px}
+/* Product element card */
+.prod-el-card{margin-top:12px;border:1px solid #21262d;border-radius:10px;padding:12px 14px;background:#0d1117}
+.prod-el-header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.prod-el-sym{font-size:36px;font-weight:700;line-height:1}
+.prod-el-info h3{font-size:15px;font-weight:500;margin-bottom:2px}
+.prod-el-info p{font-size:12px;color:#8b949e}
+.prod-el-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.prod-el-stat{background:#161b22;border-radius:6px;padding:6px 8px}
+.prod-el-stat .lbl{font-size:10px;color:#484f58;margin-bottom:1px}
+.prod-el-stat .val{font-size:12px;font-weight:500}
+.prod-el-desc{font-size:13px;color:#8b949e;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>⚛ Большой адронный коллайдер</h1>
+<p class="subtitle">Выберите две частицы или элемента, задайте энергию и запустите столкновение</p>
+
+<div class="tabs">
+  <div class="tab active" id="tabPart" onclick="switchTab('part')">Фундаментальные частицы</div>
+  <div class="tab" id="tabElem" onclick="switchTab('elem')">Таблица Менделеева</div>
+</div>
+
+<!-- PARTICLES TAB -->
+<div id="partTab">
+  <div class="section-title">Выберите частицы</div>
+  <div class="particle-grid" id="particleGrid"></div>
+</div>
+
+<!-- ELEMENTS TAB -->
+<div id="elemTab">
+  <div class="pt-legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#ff7b72"></div>Щелочные</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#ffa657"></div>Щёлочноземельные</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#d2a8ff"></div>Переходные</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#79c0ff"></div>Post-transition</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#56d364"></div>Металлоиды</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#e3b341"></div>Неметаллы</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f78166"></div>Галогены</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#58a6ff"></div>Благородные</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#bc8cff"></div>Лантаниды</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f47067"></div>Актиниды</div>
+  </div>
+  <div class="pt-wrap"><div class="pt-grid" id="ptGrid"></div></div>
+</div>
+
+<div class="slots">
+  <div class="slot" id="slot1"><div class="slot-lbl">Частица 1</div><div id="s1c" style="color:#484f58;font-size:13px">не выбрана</div></div>
+  <div class="vs">⟷</div>
+  <div class="slot" id="slot2"><div class="slot-lbl">Частица 2</div><div id="s2c" style="color:#484f58;font-size:13px">не выбрана</div></div>
+</div>
+
+<div class="energy-row">
+  <label>Энергия столкновения</label>
+  <input type="range" id="eslider" min="1" max="14" value="7" step="0.1">
+  <span class="eval" id="eval">7.0 ТэВ</span>
+</div>
+
+<button class="go-btn" id="goBtn" disabled>Выберите две частицы</button>
+<canvas id="cv" height="200"></canvas>
+
+<div class="result" id="result">
+  <div class="res-title" id="resTitle"></div>
+  <div class="res-grid" id="resGrid"></div>
+  <div class="section-title">Продукты столкновения</div>
+  <div class="chips" id="resChips"></div>
+  <div class="res-desc" id="resDesc"></div>
+  <div id="prodElCard"></div>
+</div>
+
+<script>
+// ── FUNDAMENTAL PARTICLES ──────────────────────────────────────────────────
+const PARTS=[
+  {id:'p',  sym:'p',  name:'Протон',      mass:938.3,    charge:+1,color:'#378ADD',type:'part'},
+  {id:'n',  sym:'n',  name:'Нейтрон',     mass:939.6,    charge:0, color:'#888780',type:'part'},
+  {id:'e',  sym:'e⁻', name:'Электрон',    mass:0.511,    charge:-1,color:'#D4537E',type:'part'},
+  {id:'mu', sym:'μ⁻', name:'Мюон',        mass:105.7,    charge:-1,color:'#7F77DD',type:'part'},
+  {id:'pb', sym:'Pb', name:'Ионы свинца', mass:193729,   charge:82,color:'#639922',type:'part'},
+  {id:'pi', sym:'π⁺', name:'Пион',        mass:139.6,    charge:+1,color:'#D85A30',type:'part'},
+  {id:'ka', sym:'K⁺', name:'Каон',        mass:493.7,    charge:+1,color:'#BA7517',type:'part'},
+  {id:'nu', sym:'νₑ', name:'Нейтрино',    mass:0.0000022,charge:0, color:'#1D9E75',type:'part'},
+];
+
+const PART_RXN={
+  'p-p':{title:'Протон-протонное столкновение',desc:'Классический процесс LHC. При высоких энергиях кварки и глюоны внутри протонов взаимодействуют напрямую. Возможно рождение бозона Хиггса через слияние двух глюонов.',products:e=>e>7?['Хиггс (H⁰)','кварки','глюоны','W±','Z⁰','π±','π⁰','J/ψ']:['π±','π⁰','η','p','p̄','n'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(100/e).toFixed(1)} мбн`,T:e=>`${(e*1e14).toExponential(1)} К`,L:'10³⁴ см⁻²с⁻¹',flash:'#4af'},
+  'p-n':{title:'Протон-нейтронное столкновение',desc:'Нуклон-нуклонное рассеяние. Обмен π-мезонами обеспечивает ядерное взаимодействие. Рождаются пионы и другие лёгкие адроны.',products:e=>['π±','π⁰','Δ++','Δ+','n','p','η'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(120/e).toFixed(1)} мбн`,T:e=>`${(e*.8e14).toExponential(1)} К`,L:'10³² см⁻²с⁻¹',flash:'#6bf'},
+  'pb-pb':{title:'Свинец-свинцовое столкновение (Pb+Pb)',desc:'Воссоздаёт кварк-глюонную плазму — состояние материи, существовавшее через микросекунды после Большого взрыва. Температура превышает 10¹² К.',products:e=>['QGP','π±','π⁰','K±','p̄','Λ','Ξ','Ω⁻','φ','J/ψ'],el:e=>`${(e*1000*208).toFixed(0)} ГэВ/нуклон`,cs:e=>`${(7700/e).toFixed(0)} мбн`,T:e=>`${(e*2e12).toExponential(1)} К`,L:'10²⁷ см⁻²с⁻¹',flash:'#fa4'},
+  'e-e':{title:'Электрон-электронное рассеяние',desc:'Мёллеровское рассеяние — упругое рассеяние двух электронов за счёт обмена виртуальным фотоном. Прецизионный тест КЭД.',products:e=>['e⁻','e⁻','γ (виртуальный)'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(0.01/e/e).toExponential(1)} мбн`,T:e=>`${(e*1e13).toExponential(1)} К`,L:'10³⁴ см⁻²с⁻¹',flash:'#f4a'},
+  'e-p':{title:'Глубоконеупругое рассеяние (e⁻+p)',desc:'Классический эксперимент для зондирования внутренней структуры протона. Электрон обменивается виртуальным фотоном с кварком протона.',products:e=>['e⁻','кварки','глюоны','π±','K±'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(10/e).toFixed(2)} мбн`,T:e=>`${(e*5e13).toExponential(1)} К`,L:'10³³ см⁻²с⁻¹',flash:'#c5f'},
+  'mu-mu':{title:'Мюон-мюонное столкновение',desc:'Исследуемый тип коллайдера следующего поколения. Мюоны в 207 раз тяжелее электронов, что снижает синхротронное излучение.',products:e=>e>5?['H⁰ (Хиггс)','W+W−','Z⁰Z⁰','τ+τ−']:['γ','e+e−','νμ','ν̄μ'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(0.1/e).toExponential(1)} мбн`,T:e=>`${(e*8e13).toExponential(1)} К`,L:'10³⁵ см⁻²с⁻¹',flash:'#b7f'},
+  'pi-pi':{title:'Пион-пионное рассеяние',desc:'Мезон-мезонное рассеяние. Изучает сильное взаимодействие в секторе лёгких мезонов. Наблюдается рождение ρ и σ резонансов.',products:e=>['π±','π⁰','η','ρ⁰','ρ±','ω','σ/f₀(500)'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(20/e).toFixed(1)} мбн`,T:e=>`${(e*3e13).toExponential(1)} К`,L:'10³⁰ см⁻²с⁻¹',flash:'#f84'},
+  default:{title:'Экзотическое столкновение',desc:'Редкий тип взаимодействия. Продукты определяются законами сохранения барионного числа, лептонного числа и заряда.',products:e=>['γ','π±','K±','νₑ','ν̄ₑ','e±'],el:e=>`${(e*1000).toFixed(0)} ГэВ`,cs:e=>`${(5/e).toFixed(2)} мбн`,T:e=>`${(e*1e13).toExponential(1)} К`,L:'10³¹ см⁻²с⁻¹',flash:'#fff'},
+};
+function getPRxn(a,b){const k=[a,b].sort().join('-');return PART_RXN[k]||PART_RXN.default;}
+
+// ── ELEMENTS ──────────────────────────────────────────────────────────────
+// [Z, sym, nameRu, mass, category, color, period, group]
+// category: alkali alkaline transition post metalloid nonmetal halogen noble lanthanide actinide
+const ELEM_DATA=[
+ [1,'H','Водород',1.008,'nonmetal',1,1],
+ [2,'He','Гелий',4.003,'noble',1,18],
+ [3,'Li','Литий',6.941,'alkali',2,1],
+ [4,'Be','Бериллий',9.012,'alkaline',2,2],
+ [5,'B','Бор',10.81,'metalloid',2,13],
+ [6,'C','Углерод',12.011,'nonmetal',2,14],
+ [7,'N','Азот',14.007,'nonmetal',2,15],
+ [8,'O','Кислород',15.999,'nonmetal',2,16],
+ [9,'F','Фтор',18.998,'halogen',2,17],
+ [10,'Ne','Неон',20.18,'noble',2,18],
+ [11,'Na','Натрий',22.99,'alkali',3,1],
+ [12,'Mg','Магний',24.305,'alkaline',3,2],
+ [13,'Al','Алюминий',26.982,'post',3,13],
+ [14,'Si','Кремний',28.086,'metalloid',3,14],
+ [15,'P','Фосфор',30.974,'nonmetal',3,15],
+ [16,'S','Сера',32.065,'nonmetal',3,16],
+ [17,'Cl','Хлор',35.453,'halogen',3,17],
+ [18,'Ar','Аргон',39.948,'noble',3,18],
+ [19,'K','Калий',39.098,'alkali',4,1],
+ [20,'Ca','Кальций',40.078,'alkaline',4,2],
+ [21,'Sc','Скандий',44.956,'transition',4,3],
+ [22,'Ti','Титан',47.867,'transition',4,4],
+ [23,'V','Ванадий',50.942,'transition',4,5],
+ [24,'Cr','Хром',51.996,'transition',4,6],
+ [25,'Mn','Марганец',54.938,'transition',4,7],
+ [26,'Fe','Железо',55.845,'transition',4,8],
+ [27,'Co','Кобальт',58.933,'transition',4,9],
+ [28,'Ni','Никель',58.693,'transition',4,10],
+ [29,'Cu','Медь',63.546,'transition',4,11],
+ [30,'Zn','Цинк',65.38,'transition',4,12],
+ [31,'Ga','Галлий',69.723,'post',4,13],
+ [32,'Ge','Германий',72.631,'metalloid',4,14],
+ [33,'As','Мышьяк',74.922,'metalloid',4,15],
+ [34,'Se','Селен',78.971,'nonmetal',4,16],
+ [35,'Br','Бром',79.904,'halogen',4,17],
+ [36,'Kr','Криптон',83.798,'noble',4,18],
+ [37,'Rb','Рубидий',85.468,'alkali',5,1],
+ [38,'Sr','Стронций',87.62,'alkaline',5,2],
+ [39,'Y','Иттрий',88.906,'transition',5,3],
+ [40,'Zr','Цирконий',91.224,'transition',5,4],
+ [41,'Nb','Ниобий',92.906,'transition',5,5],
+ [42,'Mo','Молибден',95.96,'transition',5,6],
+ [43,'Tc','Технеций',98,'transition',5,7],
+ [44,'Ru','Рутений',101.07,'transition',5,8],
+ [45,'Rh','Родий',102.906,'transition',5,9],
+ [46,'Pd','Палладий',106.42,'transition',5,10],
+ [47,'Ag','Серебро',107.868,'transition',5,11],
+ [48,'Cd','Кадмий',112.411,'transition',5,12],
+ [49,'In','Индий',114.818,'post',5,13],
+ [50,'Sn','Олово',118.71,'post',5,14],
+ [51,'Sb','Сурьма',121.76,'metalloid',5,15],
+ [52,'Te','Теллур',127.6,'metalloid',5,16],
+ [53,'I','Йод',126.904,'halogen',5,17],
+ [54,'Xe','Ксенон',131.293,'noble',5,18],
+ [55,'Cs','Цезий',132.905,'alkali',6,1],
+ [56,'Ba','Барий',137.327,'alkaline',6,2],
+ [57,'La','Лантан',138.905,'lanthanide',6,3],
+ [58,'Ce','Церий',140.116,'lanthanide',8,4],
+ [59,'Pr','Празеодим',140.908,'lanthanide',8,5],
+ [60,'Nd','Неодим',144.242,'lanthanide',8,6],
+ [61,'Pm','Прометий',145,'lanthanide',8,7],
+ [62,'Sm','Самарий',150.36,'lanthanide',8,8],
+ [63,'Eu','Европий',151.964,'lanthanide',8,9],
+ [64,'Gd','Гадолиний',157.25,'lanthanide',8,10],
+ [65,'Tb','Тербий',158.925,'lanthanide',8,11],
+ [66,'Dy','Диспрозий',162.5,'lanthanide',8,12],
+ [67,'Ho','Гольмий',164.93,'lanthanide',8,13],
+ [68,'Er','Эрбий',167.259,'lanthanide',8,14],
+ [69,'Tm','Тулий',168.934,'lanthanide',8,15],
+ [70,'Yb','Иттербий',173.054,'lanthanide',8,16],
+ [71,'Lu','Лютеций',174.967,'lanthanide',8,17],
+ [72,'Hf','Гафний',178.49,'transition',6,4],
+ [73,'Ta','Тантал',180.948,'transition',6,5],
+ [74,'W','Вольфрам',183.84,'transition',6,6],
+ [75,'Re','Рений',186.207,'transition',6,7],
+ [76,'Os','Осмий',190.23,'transition',6,8],
+ [77,'Ir','Иридий',192.217,'transition',6,9],
+ [78,'Pt','Платина',195.084,'transition',6,10],
+ [79,'Au','Золото',196.967,'transition',6,11],
+ [80,'Hg','Ртуть',200.592,'transition',6,12],
+ [81,'Tl','Таллий',204.383,'post',6,13],
+ [82,'Pb','Свинец',207.2,'post',6,14],
+ [83,'Bi','Висмут',208.98,'post',6,15],
+ [84,'Po','Полоний',209,'metalloid',6,16],
+ [85,'At','Астат',210,'halogen',6,17],
+ [86,'Rn','Радон',222,'noble',6,18],
+ [87,'Fr','Франций',223,'alkali',7,1],
+ [88,'Ra','Радий',226,'alkaline',7,2],
+ [89,'Ac','Актиний',227,'actinide',7,3],
+ [90,'Th','Торий',232.038,'actinide',9,4],
+ [91,'Pa','Протактиний',231.036,'actinide',9,5],
+ [92,'U','Уран',238.029,'actinide',9,6],
+ [93,'Np','Нептуний',237,'actinide',9,7],
+ [94,'Pu','Плутоний',244,'actinide',9,8],
+ [95,'Am','Америций',243,'actinide',9,9],
+ [96,'Cm','Кюрий',247,'actinide',9,10],
+ [97,'Bk','Берклий',247,'actinide',9,11],
+ [98,'Cf','Калифорний',251,'actinide',9,12],
+ [99,'Es','Эйнштейний',252,'actinide',9,13],
+ [100,'Fm','Фермий',257,'actinide',9,14],
+ [101,'Md','Менделевий',258,'actinide',9,15],
+ [102,'No','Нобелий',259,'actinide',9,16],
+ [103,'Lr','Лоуренсий',266,'actinide',9,17],
+ [104,'Rf','Резерфордий',267,'transition',7,4],
+ [105,'Db','Дубний',268,'transition',7,5],
+ [106,'Sg','Сиборгий',271,'transition',7,6],
+ [107,'Bh','Борий',272,'transition',7,7],
+ [108,'Hs','Хассий',270,'transition',7,8],
+ [109,'Mt','Мейтнерий',278,'transition',7,9],
+ [110,'Ds','Дармштадтий',281,'transition',7,10],
+ [111,'Rg','Рентгений',282,'transition',7,11],
+ [112,'Cn','Коперниций',285,'transition',7,12],
+ [113,'Nh','Нихоний',286,'post',7,13],
+ [114,'Fl','Флеровий',289,'post',7,14],
+ [115,'Mc','Московий',290,'post',7,15],
+ [116,'Lv','Ливерморий',293,'post',7,16],
+ [117,'Ts','Теннессин',294,'halogen',7,17],
+ [118,'Og','Оганесон',294,'noble',7,18],
+];
+
+// Detailed descriptions for produced elements
+const ELEM_DESC={
+  1:{desc:'Водород — самый лёгкий и распространённый элемент во Вселенной. Составляет ~75% барионной массы. Основное топливо звёзд в реакциях ядерного синтеза. Изотоп дейтерий используется в термоядерных реакторах.',state:'газ',disc:'Известен с древности',color:'#e3b341'},
+  2:{desc:'Гелий — второй по распространённости элемент во Вселенной. Образуется в ядрах звёзд при слиянии протонов. Используется в криогенике (охлаждение магнитов MRI и LHC), дирижаблях и как защитный газ.',state:'газ',disc:'1868 (Жансен)',color:'#58a6ff'},
+  4:{desc:'Бериллий — лёгкий, жёсткий металл. Прозрачен для рентгеновских лучей, используется в окнах рентгеновских трубок. Применяется в аэрокосмической промышленности и в качестве замедлителя нейтронов в реакторах.',state:'твёрдый',disc:'1798 (Вокелен)',color:'#ffa657'},
+  6:{desc:'Углерод — основа всей органической химии. Алмаз (твердейший природный материал) и графит — аллотропы углерода. Нанотрубки из углерода прочнее стали в 100 раз. Изотоп C-14 используется для радиоуглеродного датирования.',state:'твёрдый',disc:'Древность',color:'#e3b341'},
+  8:{desc:'Кислород — третий по распространённости элемент во Вселенной. Образуется в массивных звёздах при горении гелия и углерода. Поддерживает горение и необходим для дыхания большинства живых организмов.',state:'газ',disc:'1774 (Пристли)',color:'#e3b341'},
+  10:{desc:'Неон — инертный благородный газ. Применяется в рекламных неоновых трубках (характерное красно-оранжевое свечение). В звёздах образуется при горении углерода и кислорода.',state:'газ',disc:'1898 (Рамзай)',color:'#58a6ff'},
+  12:{desc:'Магний — лёгкий конструкционный металл. Горит ярким белым пламенем (3100°C). Используется в авиации, автомобилестроении и пиротехнике. Важнейший элемент для фотосинтеза (центр молекулы хлорофилла).',state:'твёрдый',disc:'1755 (Блэк)',color:'#ffa657'},
+  14:{desc:'Кремний — полупроводник, основа современной электроники. Второй по распространённости элемент земной коры (28%). Применяется в солнечных батареях, чипах и оптике. «Кремниевая долина» названа в его честь.',state:'твёрдый',disc:'1824 (Берцелиус)',color:'#56d364'},
+  16:{desc:'Сера — элемент с характерным запахом. Входит в состав аминокислот, вулканических газов и кислотных дождей (SO₂). Используется при производстве серной кислоты — важнейшего промышленного химиката.',state:'твёрдый',disc:'Древность',color:'#e3b341'},
+  18:{desc:'Аргон — наиболее распространённый благородный газ в атмосфере Земли (0.93%). Используется как инертная среда при сварке и в энергосберегающих лампах. Образуется при распаде радиоактивного K-40 в земной коре.',state:'газ',disc:'1894 (Рэлей, Рамзай)',color:'#58a6ff'},
+  20:{desc:'Кальций — пятый по распространённости элемент земной коры. Основной компонент костей, зубов и раковин. Карбонат кальция (мел, мрамор, известняк) формировал облик планеты миллиарды лет.',state:'твёрдый',disc:'1808 (Дэви)',color:'#ffa657'},
+  26:{desc:'Железо — самый распространённый элемент Земли по массе (ядро планеты). Конец ядерного горения в массивных звёздах — синтез Fe-56 не выделяет энергию. Это запускает коллапс сверхновых. Основа сталелитейной промышленности.',state:'твёрдый',disc:'Древность',color:'#d2a8ff'},
+  28:{desc:'Никель — ферромагнитный металл. Используется в нержавеющих сталях, аккумуляторах и монетах. Метеориты часто содержат сплав железо-никель. Активный катализатор в химической промышленности.',state:'твёрдый',disc:'1751 (Кронштедт)',color:'#d2a8ff'},
+  29:{desc:'Медь — первый металл, освоенный человечеством (Медный век, ~5000 до н.э.). Лучший недрагоценный проводник тока. Биоцидные свойства меди используются в медицине. Зеленеет от патины (Cu₂CO₃).',state:'твёрдый',disc:'Древность',color:'#d2a8ff'},
+  30:{desc:'Цинк — защищает металлы от коррозии (цинкование). Эссенциальный микроэлемент: входит в состав более 300 ферментов. Используется в батарейках и латуни (сплав с медью).',state:'твёрдый',disc:'1746 (Маргграф)',color:'#d2a8ff'},
+  36:{desc:'Криптон — редкий инертный газ. Используется в некоторых типах лазеров и лампах высокой яркости. Изотоп Kr-85 — продукт деления ядер урана, маркер ядерной деятельности.',state:'газ',disc:'1898 (Рамзай)',color:'#58a6ff'},
+  47:{desc:'Серебро — лучший проводник тепла и электричества среди всех металлов. Сильнейшие антибактериальные свойства известны с античности. Применяется в электронике, фотографии и ювелирном деле.',state:'твёрдый',disc:'Древность',color:'#d2a8ff'},
+  50:{desc:'Олово — пластичный металл с низкой температурой плавления. Бронза (олово+медь) дала название целой эпохе человечества. Используется в пайке, консервных банках и сплавах. При сгибании издаёт «оловянный крик».',state:'твёрдый',disc:'Древность',color:'#79c0ff'},
+  54:{desc:'Ксенон — тяжёлый благородный газ. Используется в ксеноновых лампах, наркозе и ионных двигателях космических аппаратов. Может образовывать соединения с фтором и кислородом вопреки ожиданиям «инертности».',state:'газ',disc:'1898 (Рамзай)',color:'#58a6ff'},
+  56:{desc:'Барий — мягкий щёлочноземельный металл. Сульфат бария (барит) непрозрачен для рентгена — используется как контрастное вещество при рентгеноскопии желудка. Придаёт зелёный цвет фейерверкам.',state:'твёрдый',disc:'1808 (Дэви)',color:'#ffa657'},
+  74:{desc:'Вольфрам — металл с наивысшей температурой плавления (3422°C) среди всех элементов. Нить накала в лампах. Используется в броне, режущих инструментах и жаропрочных сплавах.',state:'твёрдый',disc:'1783 (братья д\'Элуяр)',color:'#d2a8ff'},
+  78:{desc:'Платина — драгоценный металл исключительной химической стойкости. Важнейший катализатор: нейтрализаторы выхлопных газов, синтез азотной кислоты. Эталон метра и килограмма хранился в виде платино-иридиевого сплава.',state:'твёрдый',disc:'1735 (Улоа)',color:'#d2a8ff'},
+  79:{desc:'Золото — благородный металл, символ богатства тысячелетиями. Не окисляется, лучший проводник в электронных контактах. Образуется при слиянии нейтронных звёзд (килоновые). Применяется в электронике и медицине.',state:'твёрдый',disc:'Древность',color:'#d2a8ff'},
+  82:{desc:'Свинец — плотный мягкий металл. Защищает от радиации (поглощает γ-излучение). Используется в аккумуляторах. Токсичен — исторически применялся в красках и водопроводных трубах, что вызывало массовые отравления.',state:'твёрдый',disc:'Древность',color:'#79c0ff'},
+  86:{desc:'Радон — радиоактивный благородный газ. Образуется при распаде радия в горных породах. Может накапливаться в подвалах, являясь второй по частоте причиной рака лёгких после курения.',state:'газ',disc:'1900 (Дорн)',color:'#58a6ff'},
+  88:{desc:'Радий — радиоактивный металл, открытый Марией Кюри. В начале XX века добавлялся в краски для циферблатов (самосветящиеся часы). Вызывал лучевую болезнь у работниц фабрик. Используется в лучевой терапии.',state:'твёрдый',disc:'1898 (Кюри)',color:'#ffa657'},
+  92:{desc:'Уран — основное ядерное топливо. Самый тяжёлый природный элемент. Деление ядра U-235 выделяет в 2 млн раз больше энергии, чем сжигание угля. Период полураспада U-238 — 4,5 млрд лет (возраст Земли).',state:'твёрдый',disc:'1789 (Клапрот)',color:'#f47067'},
+  94:{desc:'Плутоний — синтетический актинид. Pu-239 — основной материал ядерного оружия. Получается в реакторах из U-238. Период полураспада Pu-239 — 24 тыс. лет. Источник тепла в радиоизотопных генераторах космических аппаратов (Voyager, Cassini).',state:'твёрдый',disc:'1940 (Сиборг)',color:'#f47067'},
+  96:{desc:'Кюрий — синтетический элемент, назван в честь Пьера и Марии Кюри. Радиоактивен — испускает α-частицы. Cm-244 используется как источник α-излучения в спектрометрах на борту марсоходов (Curiosity, Perseverance).',state:'твёрдый',disc:'1944 (Сиборг)',color:'#f47067'},
+  118:{desc:'Оганесон — самый тяжёлый синтезированный элемент, назван в честь Юрия Оганесяна. Синтезирован в ОИЯИ (Дубна) в 2002 году. Получено всего несколько атомов с периодом полураспада ~0.7 мс. Ожидается, что является твёрдым телом при н.у.',state:'твёрдый',disc:'2002 (ОИЯИ)',color:'#58a6ff'},
+};
+
+const CATEGORY_COLORS={
+  alkali:'#ff7b72',alkaline:'#ffa657',transition:'#d2a8ff',post:'#79c0ff',
+  metalloid:'#56d364',nonmetal:'#e3b341',halogen:'#f78166',noble:'#58a6ff',
+  lanthanide:'#bc8cff',actinide:'#f47067'
+};
+
+// Build element lookup by Z
+const ELEMS={};
+ELEM_DATA.forEach(d=>ELEMS[d[0]]={z:d[0],sym:d[1],name:d[2],mass:d[3],cat:d[4],period:d[5],group:d[6]});
+
+// ── STATE ────────────────────────────────────────────────────────────────
+let sel=[null,null]; // each: {type:'part'|'elem', data:...}
+let energy=7;
+let currentTab='part';
+
+// ── TAB SWITCH ───────────────────────────────────────────────────────────
+function switchTab(t){
+  currentTab=t;
+  document.getElementById('tabPart').className='tab'+(t==='part'?' active':'');
+  document.getElementById('tabElem').className='tab'+(t==='elem'?' active':'');
+  document.getElementById('partTab').style.display=t==='part'?'block':'none';
+  document.getElementById('elemTab').style.display=t==='elem'?'block':'none';
+}
+
+// ── BUILD PARTICLE GRID ──────────────────────────────────────────────────
+const pg=document.getElementById('particleGrid');
+PARTS.forEach(p=>{
+  const c=document.createElement('div');
+  c.className='p-card'; c.dataset.pid=p.id;
+  const ms=p.mass<1?p.mass.toFixed(3):p.mass>=1000?(p.mass/1000).toFixed(1)+'к':p.mass.toFixed(0);
+  c.innerHTML=`<div class="psym" style="color:${p.color}">${p.sym}</div><div class="pname">${p.name}</div><div class="pmass">${ms} МэВ</div>`;
+  c.onclick=()=>selectItem({type:'part',data:p,color:p.color,sym:p.sym,name:p.name},c,'p-card','pid',p.id);
+  pg.appendChild(c);
+});
+
+// ── BUILD PERIODIC TABLE ─────────────────────────────────────────────────
+(function buildPT(){
+  const grid=document.getElementById('ptGrid');
+  // Standard 18-column periodic table layout
+  // We'll place each element at (period, group) and handle lanthanides/actinides separately
+  const cells=Array.from({length:7},()=>Array(18).fill(null));
+  const fblock=[];
+
+  ELEM_DATA.forEach(d=>{
+    const [z,sym,name,mass,cat,period,group]=d;
+    if(period>=8){fblock.push({z,sym,name,mass,cat,period,group});return;}
+    if(period<=7&&group<=18) cells[period-1][group-1]={z,sym,name,mass,cat};
+  });
+
+  // Render main table
+  for(let r=0;r<7;r++){
+    for(let c=0;c<18;c++){
+      const el=document.createElement('div');
+      const d=cells[r][c];
+      if(!d){el.className='el empty';el.innerHTML='&nbsp;';grid.appendChild(el);continue;}
+      el.className=`el ${d.cat}`;
+      el.dataset.ez=d.z;
+      el.innerHTML=`<div class="ez">${d.z}</div><div class="esym">${d.sym}</div><div class="ename">${d.name}</div>`;
+      el.onclick=()=>selectItem({type:'elem',data:d,color:CATEGORY_COLORS[d.cat]||'#79c0ff',sym:d.sym,name:d.name,z:d.z},el,'el','ez',d.z);
+      grid.appendChild(el);
+    }
+  }
+
+  // Separator row
+  const sep=document.createElement('div');
+  sep.style.cssText='grid-column:1/19;height:6px';
+  grid.appendChild(sep);
+
+  // f-block rows (lanthanides period 8, actinides period 9)
+  [8,9].forEach(p=>{
+    const row=fblock.filter(e=>e.period===p).sort((a,b)=>a.group-b.group);
+    // 3 empty + 14 f-block + 1 empty = 18
+    for(let c=0;c<18;c++){
+      const el=document.createElement('div');
+      const idx=c-3;
+      if(idx<0||idx>=row.length){el.className='el empty';el.innerHTML='&nbsp;';grid.appendChild(el);continue;}
+      const d=row[idx];
+      el.className=`el ${d.cat}`;
+      el.dataset.ez=d.z;
+      el.innerHTML=`<div class="ez">${d.z}</div><div class="esym">${d.sym}</div><div class="ename">${d.name}</div>`;
+      el.onclick=()=>selectItem({type:'elem',data:d,color:CATEGORY_COLORS[d.cat]||'#79c0ff',sym:d.sym,name:d.name,z:d.z},el,'el','ez',d.z);
+      grid.appendChild(el);
+    }
+  });
+})();
+
+// ── SELECTION ────────────────────────────────────────────────────────────
+function selectItem(item,clickedEl,cardClass,dataAttr,dataVal){
+  if(sel[0]===null){
+    // Slot 1 empty — fill it
+    sel[0]=item;
+    clickedEl.classList.remove('sel1','sel2','selboth');
+    clickedEl.classList.add('sel1');
+  } else if(sel[1]===null){
+    // Slot 2 empty — fill it
+    const sameCard=(sel[0]._el===clickedEl);
+    sel[1]=item;
+    if(sameCard){
+      // Same card chosen for both slots
+      clickedEl.classList.remove('sel1','sel2');
+      clickedEl.classList.add('selboth');
+    } else {
+      clickedEl.classList.remove('sel1','sel2','selboth');
+      clickedEl.classList.add('sel2');
+    }
+  } else {
+    // Both filled — reset and start over
+    document.querySelectorAll('.p-card,.el').forEach(c=>c.classList.remove('sel1','sel2','selboth'));
+    sel=[item,null];
+    clickedEl.classList.add('sel1');
+  }
+  // Store reference to DOM element for same-card detection
+  item._el=clickedEl;
+  updateSlots(); updateBtn();
+}
+function markSelected(el,cls){el.classList.remove('sel1','sel2');el.classList.add(cls);}
+function refreshCardStyles(cardClass,dataAttr,keepSel1=false){
+  // nothing fancy needed
+}
+
+// ── SLOTS & BUTTON ────────────────────────────────────────────────────────
+function updateSlots(){
+  const s1=document.getElementById('slot1'),s2=document.getElementById('slot2');
+  const c1=document.getElementById('s1c'),c2=document.getElementById('s2c');
+  const same=sel[0]&&sel[1]&&sel[0]._el===sel[1]._el;
+  if(sel[0]){s1.className='slot f1';c1.innerHTML=`<div class="slot-sym" style="color:${sel[0].color}">${sel[0].sym}</div><div class="slot-nm">${sel[0].name}${same?' ×2':''}</div>`;}
+  else{s1.className='slot';c1.innerHTML=`<span style="color:#484f58;font-size:13px">не выбрана</span>`;}
+  if(sel[1]){s2.className='slot f2';c2.innerHTML=`<div class="slot-sym" style="color:${sel[1].color}">${sel[1].sym}</div><div class="slot-nm">${sel[1].name}${same?' ×2':''}</div>`;}
+  else{s2.className='slot';c2.innerHTML=`<span style="color:#484f58;font-size:13px">не выбрана</span>`;}
+}
+function updateBtn(){
+  const btn=document.getElementById('goBtn');
+  if(sel[0]&&sel[1]){btn.disabled=false;btn.className='go-btn ready';btn.textContent='⚡ Запустить столкновение';}
+  else{btn.disabled=true;btn.className='go-btn';btn.textContent='Выберите две частицы';}
+}
+
+// ── ENERGY ───────────────────────────────────────────────────────────────
+document.getElementById('eslider').addEventListener('input',function(){
+  energy=parseFloat(this.value);
+  document.getElementById('eval').textContent=energy.toFixed(1)+' ТэВ';
+});
+
+// ── CANVAS ───────────────────────────────────────────────────────────────
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+cv.width=680;cv.height=200;
+
+function drawIdle(){
+  ctx.clearRect(0,0,680,200);
+  ctx.fillStyle='#04090f';ctx.fillRect(0,0,680,200);
+  ctx.strokeStyle='#0a2a4a';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(340,100,80,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(340,100,55,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='#061a2e';
+  for(let i=0;i<16;i++){const a=i*Math.PI/8;ctx.beginPath();ctx.moveTo(340+55*Math.cos(a),100+55*Math.sin(a));ctx.lineTo(340+80*Math.cos(a),100+80*Math.sin(a));ctx.stroke();}
+  ctx.fillStyle='#0f3a6a';ctx.beginPath();ctx.arc(340,100,8,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#1a5fa5';ctx.beginPath();ctx.arc(340,100,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#0a3060';ctx.font='12px system-ui,sans-serif';ctx.textAlign='center';
+  ctx.fillText('ATLAS · LHC · CMS',340,185);
+}
+drawIdle();
+
+let animFrame=null;
+function runAnim(color1,color2,flash){
+  if(animFrame) cancelAnimationFrame(animFrame);
+  let t=0;
+  const p1=Array.from({length:8},()=>({x:50,y:100,vx:4+Math.random()*2,vy:(Math.random()-.5)*1.5,r:3+Math.random()*2,c:color1}));
+  const p2=Array.from({length:8},()=>({x:630,y:100,vx:-(4+Math.random()*2),vy:(Math.random()-.5)*1.5,r:3+Math.random()*2,c:color2}));
+  let exploded=false,debris=[];
+  function frame(){
+    ctx.fillStyle='rgba(4,9,15,0.3)';ctx.fillRect(0,0,680,200);
+    ctx.strokeStyle='#0a2a4a';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.arc(340,100,80,0,Math.PI*2);ctx.stroke();
+    if(!exploded){
+      p1.forEach(q=>{q.x+=q.vx;q.y+=q.vy;});
+      p2.forEach(q=>{q.x+=q.vx;q.y+=q.vy;});
+      if(p1[0].x>260&&t>30){
+        exploded=true;
+        const cols=[flash,'#ff6','#f8a','#8ff','#f44','#4f4','#a4f','#ff8','#4af'];
+        debris=Array.from({length:28+Math.floor(energy*2)},()=>{
+          const a=Math.random()*Math.PI*2,s=1+Math.random()*5*(energy/7);
+          return{x:340,y:100,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:1.5+Math.random()*2.5,c:cols[Math.floor(Math.random()*cols.length)],a:1,life:40+Math.floor(Math.random()*60)};
+        });
+        const grd=ctx.createRadialGradient(340,100,0,340,100,60+energy*5);
+        grd.addColorStop(0,'rgba(255,255,255,0.9)');grd.addColorStop(0.2,flash+'cc');grd.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=grd;ctx.fillRect(0,0,680,200);
+      }
+      [...p1,...p2].forEach(q=>{
+        ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,Math.PI*2);ctx.fillStyle=q.c+'cc';ctx.fill();
+        ctx.beginPath();ctx.arc(q.x,q.y,q.r*2,0,Math.PI*2);ctx.fillStyle=q.c+'33';ctx.fill();
+      });
+    } else {
+      debris.forEach(d=>{d.x+=d.vx;d.y+=d.vy;d.vx*=.98;d.vy*=.98;d.a-=1/d.life;if(d.a<0)d.a=0;
+        ctx.globalAlpha=d.a;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=d.c;ctx.fill();ctx.globalAlpha=1;
+      });
+      const gr=Math.max(0,40-t*.3);
+      if(gr>0){const g=ctx.createRadialGradient(340,100,0,340,100,gr);g.addColorStop(0,flash+'44');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,680,200);}
+    }
+    t++;
+    if(t<120) animFrame=requestAnimationFrame(frame);
+    else{drawIdle();animFrame=null;}
+  }
+  frame();
+}
+
+// ── NUCLEAR REACTION LOGIC ────────────────────────────────────────────────
+function calcElementCollision(z1,z2,e){
+  const zSum=z1+z2;
+  const isHighEnergy=e>8;
+
+  if(isHighEnergy){
+    // Spallation / QGP-like
+    const frags=[];
+    // Generate a few smaller nuclei
+    const n1=ELEMS[Math.max(1,z1-Math.floor(Math.random()*3+1))];
+    const n2=ELEMS[Math.max(1,z2-Math.floor(Math.random()*3+1))];
+    if(n1) frags.push(n1.sym+'(фрагмент)');
+    if(n2) frags.push(n2.sym+'(фрагмент)');
+    frags.push('π±','нейтроны','γ-кванты');
+    return{
+      title:`Разрушительное ядерное столкновение (${ELEMS[z1].sym} + ${ELEMS[z2].sym})`,
+      desc:`При энергии ${e.toFixed(1)} ТэВ кинетическая энергия намного превышает энергию ядерного связывания. Оба ядра разрушаются — происходит спалляция: вырываются нуклоны и лёгкие ядра. Рождается ливень вторичных частиц.`,
+      products:frags,
+      stats:[
+        {lbl:'Энергия ц.м.',val:`${(e*1000*(z1+z2)).toFixed(0)} ГэВ`},
+        {lbl:'Сечение',val:`${(Math.PI*1.2*1.2*(Math.cbrt(z1)+Math.cbrt(z2))**2).toFixed(1)} фн`},
+        {lbl:'Температура',val:`${(e*5e13).toExponential(1)} К`},
+        {lbl:'Тип реакции',val:'Спалляция'},
+      ],
+      prodEl:null,
+      flash:'#f84',
+    };
+  }
+
+  if(zSum>118){
+    // Superheavy
+    return{
+      title:`Синтез сверхтяжёлого ядра (Z=${zSum})`,
+      desc:`Слияние ${ELEMS[z1].name} (Z=${z1}) и ${ELEMS[z2].name} (Z=${z2}) даёт ядро с Z=${zSum} — за пределами таблицы Менделеева. Предполагаемый «остров стабильности» ядерной физики находится около Z=114–126. Такие ядра существуют ничтожные доли секунды.`,
+      products:[`Сверхтяжёлый изотоп Z=${zSum}`,'α-распад','γ-излучение','нейтроны'],
+      stats:[
+        {lbl:'Атомный номер',val:`Z = ${zSum}`},
+        {lbl:'Масса ≈',val:`${(ELEMS[z1].mass+ELEMS[z2].mass).toFixed(1)} а.е.м.`},
+        {lbl:'Время жизни',val:'< 1 мс'},
+        {lbl:'Тип реакции',val:'Ядерный синтез'},
+      ],
+      prodEl:null,
+      flash:'#b7f',
+    };
+  }
+
+  // Fusion: known element
+  const prod=ELEMS[zSum];
+  const info=ELEM_DESC[zSum]||{desc:`${prod.name} — ${prod.cat} элемент с атомной массой ${prod.mass.toFixed(2)} а.е.м.`,state:'неизв.',disc:'Синтез',color:CATEGORY_COLORS[prod.cat]||'#79c0ff'};
+  return{
+    title:`Ядерный синтез: ${ELEMS[z1].sym} + ${ELEMS[z2].sym} → ${prod.sym}`,
+    desc:`Слияние ядер ${ELEMS[z1].name} (Z=${z1}) и ${ELEMS[z2].name} (Z=${z2}) образует ядро ${prod.name} (Z=${zSum}). Реакция сопровождается выделением энергии (дефект масс) и γ-излучением. Возможны и побочные каналы с испусканием нейтронов.`,
+    products:[`${prod.sym} (основной)`,`${prod.sym}* (возбуждённый)`, 'γ-кванты','нейтроны (n)'],
+    stats:[
+      {lbl:'Продукт',val:`${prod.name} (Z=${zSum})`},
+      {lbl:'Атомная масса',val:`${prod.mass.toFixed(2)} а.е.м.`},
+      {lbl:'Дефект масс ≈',val:`${((ELEMS[z1].mass+ELEMS[z2].mass-prod.mass)*931.5).toFixed(1)} МэВ`},
+      {lbl:'Тип реакции',val:'Ядерный синтез'},
+    ],
+    prodEl:{...prod,...info},
+    flash:info.color||'#4af',
+  };
+}
+
+// ── COLLISION ─────────────────────────────────────────────────────────────
+document.getElementById('goBtn').addEventListener('click',()=>{
+  if(!sel[0]||!sel[1]) return;
+  const a=sel[0],b=sel[1];
+
+  let rxn,color1=a.color,color2=b.color;
+
+  if(a.type==='elem'&&b.type==='elem'){
+    rxn=calcElementCollision(a.z,b.z,energy);
+  } else if(a.type==='part'&&b.type==='part'){
+    const key=[a.data.id,b.data.id].sort().join('-');
+    const pr=PART_RXN[key]||PART_RXN.default;
+    rxn={
+      title:pr.title, desc:pr.desc,
+      products:pr.products(energy),
+      stats:[
+        {lbl:'Энергия ц.м.',val:pr.el(energy)},
+        {lbl:'Сечение',val:pr.cs(energy)},
+        {lbl:'Температура',val:pr.T(energy)},
+        {lbl:'Светимость',val:pr.L},
+      ],
+      prodEl:null,flash:pr.flash,
+    };
+  } else {
+    // Mixed: particle + element
+    const elemItem=a.type==='elem'?a:b;
+    rxn={
+      title:`Частица + ядро ${elemItem.name} (Z=${elemItem.z})`,
+      desc:`Рассеяние фундаментальной частицы на ядре ${elemItem.name}. При высоких энергиях наблюдается ядерная фрагментация и рождение вторичных мезонов. Используется для изучения ядерной структуры.`,
+      products:['π±','K±','нуклоны','γ','ν'],
+      stats:[
+        {lbl:'Энергия',val:`${(energy*1000).toFixed(0)} ГэВ`},
+        {lbl:'Ядро-мишень',val:`${elemItem.sym} (Z=${elemItem.z})`},
+        {lbl:'Тип',val:'Ядерное рассеяние'},
+        {lbl:'Сечение',val:`~${(Math.PI*1.2**2*elemItem.z**(2/3)).toFixed(1)} фн`},
+      ],
+      prodEl:null,flash:color2,
+    };
+  }
+
+  runAnim(color1,color2,rxn.flash);
+
+  // Fill result panel
+  const panel=document.getElementById('result');
+  panel.className='result show';
+  document.getElementById('resTitle').textContent=rxn.title;
+  document.getElementById('resGrid').innerHTML=rxn.stats.map(s=>`<div class="res-stat"><div class="stat-lbl">${s.lbl}</div><div class="stat-val">${s.val}</div></div>`).join('');
+  const cols=['#378ADD','#D4537E','#7F77DD','#D85A30','#1D9E75','#BA7517','#639922','#185FA5','#993556','#3C3489'];
+  document.getElementById('resChips').innerHTML=rxn.products.map((p,i)=>`<span class="chip" style="background:${cols[i%cols.length]}22;color:${cols[i%cols.length]};border:1px solid ${cols[i%cols.length]}55">${p}</span>`).join('');
+  document.getElementById('resDesc').textContent=rxn.desc;
+
+  // Element card
+  const ec=document.getElementById('prodElCard');
+  if(rxn.prodEl){
+    const el=rxn.prodEl;
+    const catRu={alkali:'Щелочной металл',alkaline:'Щёлочноземельный',transition:'Переходный металл',post:'Post-transition металл',metalloid:'Металлоид',nonmetal:'Неметалл',halogen:'Галоген',noble:'Благородный газ',lanthanide:'Лантанид',actinide:'Актинид'};
+    ec.innerHTML=`<div class="prod-el-card">
+      <div class="prod-el-header">
+        <div class="prod-el-sym" style="color:${el.color||CATEGORY_COLORS[el.cat]||'#79c0ff'}">${el.sym}</div>
+        <div class="prod-el-info"><h3>${el.name}</h3><p>Z=${el.z} · ${catRu[el.cat]||el.cat}</p></div>
+      </div>
+      <div class="prod-el-stats">
+        <div class="prod-el-stat"><div class="lbl">Атомный номер</div><div class="val">${el.z}</div></div>
+        <div class="prod-el-stat"><div class="lbl">Атомная масса</div><div class="val">${el.mass.toFixed(2)} а.е.м.</div></div>
+        <div class="prod-el-stat"><div class="lbl">Агрегатное состояние</div><div class="val">${el.state||'—'}</div></div>
+        <div class="prod-el-stat"><div class="lbl">Открыт</div><div class="val">${el.disc||'—'}</div></div>
+        <div class="prod-el-stat"><div class="lbl">Период</div><div class="val">${el.period}</div></div>
+        <div class="prod-el-stat"><div class="lbl">Группа</div><div class="val">${el.group}</div></div>
+      </div>
+      <div class="prod-el-desc">${el.desc}</div>
+    </div>`;
+  } else { ec.innerHTML=''; }
+});
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+</body>
+</html>
